@@ -2,82 +2,80 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
-class WordleGame:
+class LetterGuesser:
     def __init__(self, root):
         self.root = root
-        root.title("Wordle Plus")
+        root.title("Word Wizard")
         
-        self.words = ["phone", "apple", "beach", "cloud", "dance", "eagle", "frown", "grape", "house", "igloo"]
-        self.secret = random.choice(self.words)
-        self.tries_left = 6
-        self.past_guesses = []
-        self.used_hint = False
+        self.words = ["zebra", "quilt", "fjord", "waltz", "jumbo", "pixel", "vortex", "sphinx", "yacht", "gnome"]
+        self.target = random.choice(self.words)
+        self.chances = 7
+        self.guesses = []
+        self.hint_used = False
 
-        self.setup_ui()
+        self.create_ui()
 
-    def setup_ui(self):
-        self.boxes = []
-        for i in range(6):
+    def create_ui(self):
+        self.cells = []
+        for i in range(7):
             row = []
             for j in range(5):
-                e = tk.Entry(self.root, width=2, font=('Helvetica', 20), justify='center')
-                e.grid(row=i, column=j, padx=2, pady=2)
+                e = tk.Entry(self.root, width=2, font=('Courier', 22, 'bold'), justify='center')
+                e.grid(row=i, column=j, padx=3, pady=3)
                 row.append(e)
-            self.boxes.append(row)
+            self.cells.append(row)
 
-        tk.Button(self.root, text="Enter", command=self.check_guess).grid(row=6, column=0, columnspan=3, pady=10)
-        tk.Button(self.root, text="Hint", command=self.get_hint).grid(row=6, column=3, columnspan=2, pady=10)
+        tk.Button(self.root, text="Check", command=self.verify_guess, bg='#4CAF50', fg='white').grid(row=7, column=0, columnspan=3, pady=10)
+        tk.Button(self.root, text="Clue", command=self.request_clue, bg='#2196F3', fg='white').grid(row=7, column=3, columnspan=2, pady=10)
 
-    def check_guess(self):
-        guess = ''
-        for e in self.boxes[6 - self.tries_left]:
-            guess += e.get().lower()
+    def verify_guess(self):
+        guess = ''.join(e.get().lower() for e in self.cells[7 - self.chances])
 
         if len(guess) != 5:
-            messagebox.showwarning("Oops", "Word should be 5 letters!")
+            messagebox.showwarning("Hold up!", "Please enter a 5-letter word.")
             return
 
-        self.past_guesses.append(guess)
-        self.color_boxes(6 - self.tries_left, guess)
+        self.guesses.append(guess)
+        self.paint_cells(7 - self.chances, guess)
 
-        if guess == self.secret:
-            messagebox.showinfo("Great Job!", f"You got it in {7 - self.tries_left} tries!")
+        if guess == self.target:
+            messagebox.showinfo("Bravo!", f"You cracked it in {8 - self.chances} attempts!")
             self.root.quit()
-        elif self.tries_left == 1:
-            messagebox.showinfo("Womp womp", f"Out of guesses! The word was {self.secret}.")
+        elif self.chances == 1:
+            messagebox.showinfo("Game Over", f"Better luck next time! The word was {self.target}.")
             self.root.quit()
         else:
-            self.tries_left -= 1
+            self.chances -= 1
 
-    def color_boxes(self, row, word):
+    def paint_cells(self, row, word):
         for i, letter in enumerate(word):
-            if letter == self.secret[i]:
-                color = 'green'
-            elif letter in self.secret:
-                color = 'yellow'
+            if letter == self.target[i]:
+                color = '#9C27B0'  # Purple
+            elif letter in self.target:
+                color = '#FF9800'  # Orange
             else:
-                color = 'gray'
-            self.boxes[row][i].config(bg=color, fg='white' if color != 'yellow' else 'black')
+                color = '#607D8B'  # Blue Grey
+            self.cells[row][i].config(bg=color, fg='white')
 
-    def get_hint(self):
-        if self.used_hint:
-            messagebox.showinfo("Sorry", "You already used your hint!")
+    def request_clue(self):
+        if self.hint_used:
+            messagebox.showinfo("Oops", "You've already used your clue!")
             return
 
-        green_count = sum(1 for guess in self.past_guesses for i, letter in enumerate(guess) if letter == self.secret[i])
-        if green_count >= 3:
-            messagebox.showinfo("Can't help", "You already know 3 or more letters!")
+        correct_count = sum(1 for guess in self.guesses for i, letter in enumerate(guess) if letter == self.target[i])
+        if correct_count >= 3:
+            messagebox.showinfo("Nice try", "You already know 3 or more letters!")
             return
 
-        not_guessed = [i for i, letter in enumerate(self.secret) if all(guess[i] != letter for guess in self.past_guesses)]
-        if not_guessed:
-            hint_pos = random.choice(not_guessed)
-            messagebox.showinfo("Here's a hint", f"Letter {hint_pos + 1} is '{self.secret[hint_pos]}'")
-            self.used_hint = True
+        unknown = [i for i, letter in enumerate(self.target) if all(guess[i] != letter for guess in self.guesses)]
+        if unknown:
+            clue_index = random.choice(unknown)
+            messagebox.showinfo("Here's a clue", f"Letter {clue_index + 1} is '{self.target[clue_index]}'")
+            self.hint_used = True
         else:
-            messagebox.showinfo("Weird", "No letters left to hint!")
+            messagebox.showinfo("Interesting", "No new letters to reveal!")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    game = WordleGame(root)
+    game = LetterGuesser(root)
     root.mainloop()
